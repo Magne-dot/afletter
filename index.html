@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Afletter Tool</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 1200px;
+            margin: 40px auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .match {
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Afletter Tool</h1>
+
+<input type="file" id="pdfUpload" accept=".pdf">
+
+<h2>Gevonden facturen</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Factuurnummer</th>
+        </tr>
+    </thead>
+    <tbody id="results"></tbody>
+</table>
+
+<script>
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+document.getElementById('pdfUpload').addEventListener('change', async e => {
+
+    const file = e.target.files[0];
+
+    const arrayBuffer = await file.arrayBuffer();
+
+    const pdf = await pdfjsLib.getDocument({
+        data: arrayBuffer
+    }).promise;
+
+    let text = '';
+
+    for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+
+        const page = await pdf.getPage(pageNum);
+
+        const content = await page.getTextContent();
+
+        text += content.items.map(i => i.str).join(' ');
+    }
+
+    console.log(text);
+
+    const facturen =
+        [...new Set(
+            text.match(/\b\d{6,12}\b/g) || []
+        )];
+
+    const tbody =
+        document.getElementById('results');
+
+    tbody.innerHTML = '';
+
+    facturen.forEach(f => {
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${f}</td>
+            </tr>
+        `;
+    });
+
+});
+
+</script>
+
+</body>
+</html>
